@@ -47,7 +47,7 @@ class Args:
     # Cameras to use for policy input
     policy_cameras: list[str] = dataclasses.field(default_factory=lambda: ["gripperPOV", "corner", "corner2"])
     # The camera used for rendering the video output (must be one of the policy cameras)
-    render_camera: Literal["corner", "corner2"] = "corner2"
+    render_camera: str = "corner"
 
     num_episodes: int = 2
     max_steps: int = 200
@@ -79,8 +79,9 @@ class MultiCameraVectorWrapper(gym.vector.VectorWrapper):
             # https://github.com/Farama-Foundation/Metaworld/issues/448
             # https://github.com/Farama-Foundation/Gymnasium/issues/736
             viewer = renderer._get_viewer(render_mode="rgb_array")  # noqa: SLF001
+            if len(renderer._viewers.keys()) >= 1:  # noqa: SLF001
+                viewer.make_context_current()
             img = viewer.render(render_mode="rgb_array", camera_id=CAMERA_IDS[cam_name])
-            viewer.make_context_current()
             images[cam_name] = img[::-1].copy()  # flip vertically
         return images
 
@@ -169,18 +170,22 @@ def make_env(
         raise NotImplementedError("ML1 is not implemented yet")
         env = gym.make("Meta-World/ML1-test", env_name=env_name, seed=seed)
 
-    if benchmark_name == "MT10":
-        env = gym.make_vec("Meta-World/MT10", vector_strategy=vector_strategy, seed=seed)
-    elif benchmark_name == "MT50":
-        env = gym.make_vec("Meta-World/MT50", vector_strategy=vector_strategy, seed=seed)
-    elif benchmark_name == "ML10":
-        env = gym.make_vec("Meta-World/ML10-test", vector_strategy=vector_strategy, seed=seed)
-    elif benchmark_name == "ML45":
-        env = gym.make_vec(
-            "Meta-World/ML45-test", vector_strategy=vector_strategy, seed=seed, width=width, height=height
-        )
-    else:
+    benchmark_ids = {
+        "MT10": "Meta-World/MT10",
+        "MT50": "Meta-World/MT50",
+        "ML10": "Meta-World/ML10-test",
+        "ML45": "Meta-World/ML45-test",
+    }
+    if benchmark_name not in benchmark_ids:
         raise ValueError(f"Unknown benchmark: {benchmark_name}")
+
+    env = gym.make_vec(
+        benchmark_ids[benchmark_name],
+        vector_strategy=vector_strategy,
+        seed=seed,
+        width=width,
+        height=height,
+    )
 
     return MultiCameraVectorWrapper(env, camera_names)
 
