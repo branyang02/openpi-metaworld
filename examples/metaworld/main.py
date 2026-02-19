@@ -28,8 +28,9 @@ CAMERA_IDS = {
     "corner": 1,
     "corner2": 2,
     "corner3": 3,
-    "behindGripper": 4,
-    "gripperPOV": 5,
+    "corner4": 4,
+    "behindGripper": 5,
+    "gripperPOV": 6,
 }
 
 
@@ -45,7 +46,7 @@ class Args:
     height: int = 224
 
     # Cameras to use for policy input
-    policy_cameras: list[str] = dataclasses.field(default_factory=lambda: ["gripperPOV", "corner", "corner2"])
+    policy_cameras: list[str] = dataclasses.field(default_factory=lambda: ["corner", "corner4", "gripperPOV"])
     # The camera used for rendering the video output (must be one of the policy cameras)
     render_camera: str = "corner"
 
