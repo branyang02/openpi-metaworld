@@ -52,6 +52,9 @@ dev = [
     "ipywidgets>=8.1.5",
     "matplotlib>=3.10.0",
     "pynvml>=12.0.0",
+    "av>=15.0.0,<16.0.0",
+    "imageio>=2.37.2",
+    "metaworld @ git+https://github.com/branyang02/Metaworld.git@master",
 ]
 rlds = [
     "dlimp",
@@ -64,7 +67,7 @@ override-dependencies = ["ml-dtypes==0.4.1", "tensorstore==0.1.74"]
 
 [tool.uv.sources]
 openpi-client = { workspace = true }
-lerobot = { git = "https://github.com/huggingface/lerobot", rev = "0cf864870cf29f4738d3ade893e6fd13fbd7cdb5" }
+lerobot = { git = "https://github.com/branyang02/lerobot", rev = "d7898d8dfdab7a0ff948659394d5a489bf6b9132" }
 dlimp = { git = "https://github.com/kvablack/dlimp", rev = "ad72ce3a9b414db2185bc0b38461d4101a65477a" }
 
 [tool.uv.workspace]

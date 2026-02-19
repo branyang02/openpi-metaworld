@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "metaworld main",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/examples/metaworld/main.py",
+            "args": [
+                "--max_steps", "20",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "MUJOCO_GL": "egl",
+                "CUDA_VISIBLE_DEVICES": "1",
+            }
+        },
+    ]
+}
