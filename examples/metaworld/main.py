@@ -4,6 +4,7 @@ MUJOCO_GL=egl uv run examples/metaworld/main.py
 
 import dataclasses
 import logging
+import math
 import os
 from typing import Literal
 
@@ -95,6 +96,25 @@ class MultiCameraVectorWrapper(gym.vector.VectorWrapper):
         obs, rewards, terms, truncs, infos = self.env.step(actions)
         infos["cameras"] = self._render_all()
         return obs, rewards, terms, truncs, infos
+
+
+def tile_frames(frames: list[np.ndarray]) -> np.ndarray:
+    """Arrange N frames into a grid image.
+
+    Grid layout: cols = ceil(sqrt(N)), rows = ceil(N / cols).
+    Empty slots are filled with black.
+    """
+    n = len(frames)
+    h, w, c = frames[0].shape
+    cols = math.ceil(math.sqrt(n))
+    rows = math.ceil(n / cols)
+
+    grid = np.zeros((rows * h, cols * w, c), dtype=frames[0].dtype)
+    for idx, frame in enumerate(frames):
+        r, col = divmod(idx, cols)
+        grid[r * h : (r + 1) * h, col * w : (col + 1) * w] = frame
+
+    return grid
 
 
 def make_env(
@@ -194,7 +214,7 @@ def main(args: Args) -> None:
             pbar = tqdm(range(args.max_steps), desc=f"Episode {episode + 1}/{args.num_episodes}")
             for _step in pbar:
                 frames = [cv[args.render_camera] for cv in camera_views]  # list of (H, W, 3)
-                grid_frame = np.concatenate(frames, axis=1)  # (H, W*num_envs, 3)
+                grid_frame = tile_frames(frames) if num_envs > 5 else np.concatenate(frames, axis=1)
                 video.write_frame(grid_frame)
 
                 # result = policy.infer(
