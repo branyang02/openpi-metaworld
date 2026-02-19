@@ -137,6 +137,10 @@ def make_env(
     https://metaworld.farama.org/introduction/basic_usage/
     """
 
+    # TODO(branyang02): should we support async vector envs?
+    if vector_strategy == "async":
+        raise NotImplementedError("Async vector environments are not supported yet!")
+
     # TODO(branyang02): should we support MT1 and ML1?
     if benchmark_name == "MT1":
         raise NotImplementedError("MT1 is not implemented yet")
