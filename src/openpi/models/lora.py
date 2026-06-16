@@ -16,8 +16,17 @@ class LoRAConfig:
     rank: int
     # LoRA scaling factor.
     alpha: float = 1.0
-    # Initialization function for LoRA parameters.
+    # Initialization function for the ``lora_a`` factor. Per Hu et al. 2021 this should
+    # be a non-zero distribution (standard choices: normal, kaiming_normal).
     init_fn: nn.initializers.Initializer = nn.initializers.normal(stddev=0.01)
+    # Initialization function for the ``lora_b`` factor. Must default to zeros so the
+    # initial LoRA delta ``lora_a @ lora_b`` is exactly zero and the LoRA-wrapped model
+    # is bit-identical to the base at step 0. Before this split the single ``init_fn``
+    # was used for both factors, which left every LoRA-wrapped weight perturbed by ~2%
+    # relative Frobenius at init — which silently corrupted the base weights when the
+    # LoRA deltas were later merged back in for deployment (breaking filtered-BC and
+    # any other zero-step comparison against the base policy).
+    init_fn_b: nn.initializers.Initializer = nn.initializers.zeros
     # Enable rank-stabilized LoRA: https://arxiv.org/pdf/2312.03732
     rslora: bool = False
     # Axes in the weight to apply LoRA to. Should typically be the last two axes.
@@ -49,7 +58,7 @@ class Einsum(nn.Module):
             shape_a[config.axes[1]] = config.rank
             shape_b[config.axes[0]] = config.rank
             self.w_a = self.param("lora_a", config.init_fn, shape_a)
-            self.w_b = self.param("lora_b", config.init_fn, shape_b)
+            self.w_b = self.param("lora_b", config.init_fn_b, shape_b)
 
     @nn.compact
     def __call__(self, eqn: str, x):
@@ -112,12 +121,12 @@ class FeedForward(nn.Module):
             self.w_gating_lora = (
                 self.param("gating_einsum_lora_a", self.lora_config.init_fn, (2, self.features, self.lora_config.rank)),
                 self.param(
-                    "gating_einsum_lora_b", self.lora_config.init_fn, (2, self.lora_config.rank, self.hidden_dim)
+                    "gating_einsum_lora_b", self.lora_config.init_fn_b, (2, self.lora_config.rank, self.hidden_dim)
                 ),
             )
             self.w_linear_lora = (
                 self.param("linear_lora_a", self.lora_config.init_fn, (self.hidden_dim, self.lora_config.rank)),
-                self.param("linear_lora_b", self.lora_config.init_fn, (self.lora_config.rank, self.features)),
+                self.param("linear_lora_b", self.lora_config.init_fn_b, (self.lora_config.rank, self.features)),
             )
 
     @nn.compact
